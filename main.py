@@ -5,7 +5,13 @@ app = Pyasync()
 
 @app.route("/")
 async def home(scope, receive, send):
-    return "Hello, World!"
+    return await app.render(
+        template_name="index.html",
+        context={
+            "title": "Home",
+            "name": "Shavkatjon",
+        },
+    )
 
 
 @app.route("/about")

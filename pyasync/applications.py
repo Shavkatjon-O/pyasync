@@ -1,4 +1,4 @@
-# Pyasync - a simple asgi web framework
+import os
 
 
 class Pyasync:
@@ -17,16 +17,26 @@ class Pyasync:
 
         if path in self.routers:
             response = await self.routers[path](scope, receive, send)
+
+            content_type = (
+                "text/html" if response.startswith("<!DOCTYPE html>") else "text/plain"
+            )
+
             await send(
                 {
                     "type": "http.response.start",
                     "status": 200,
                     "headers": [
-                        [b"content-type", b"text/plain"],
+                        [b"content-type", content_type.encode()],
                     ],
                 }
             )
-            await send({"type": "http.response.body", "body": response.encode("utf-8")})
+            await send(
+                {
+                    "type": "http.response.body",
+                    "body": response.encode("utf-8"),
+                }
+            )
         else:
             await send(
                 {
@@ -37,4 +47,20 @@ class Pyasync:
                     ],
                 }
             )
-            await send({"type": "http.response.body", "body": b"Not Found"})
+            await send(
+                {
+                    "type": "http.response.body",
+                    "body": b"Not Found",
+                }
+            )
+
+    async def render(self, template_name, context):
+        template_path = os.path.join("templates", template_name)
+
+        with open(template_path, "r", encoding="utf-8") as file:
+            template = file.read()
+
+        for key, value in context.items():
+            template = template.replace("{{ " + key + " }}", value)
+
+        return template

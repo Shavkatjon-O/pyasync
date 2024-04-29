@@ -3,5 +3,5 @@ pip install uvicorn
 ```
 
 ```
-uvicorn main:app
+uvicorn main:app --reload
 ```
