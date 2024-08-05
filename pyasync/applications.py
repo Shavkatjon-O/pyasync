@@ -1,55 +1,25 @@
-# Async Web Framework
+from pyasync.routing import Router
+from pyasync.responses import Response
 
 
 class Pyasync:
     def __init__(self):
-        self.routers = {}
+        self.router = Router()
 
-    def route(self, path):
-        def wrapper(handler):
-            self.routers[path] = handler
-            return handler
-
-        return wrapper
+    def add_route(self, path, endpoint, methods=["GET"]):
+        self.router.add_route(path, endpoint, methods)
 
     async def __call__(self, scope, receive, send):
+        assert scope["type"] == "http"
+
         path = scope["path"]
+        method = scope["method"]
 
-        if path in self.routers:
-            response = await self.routers[path](scope, receive, send)
+        handler = self.router.get_route(path, method)
 
-            content_type = (
-                "text/html" if response.startswith("<!DOCTYPE html>") else "text/plain"
-            )
-
-            await send(
-                {
-                    "type": "http.response.start",
-                    "status": 200,
-                    "headers": [
-                        [b"content-type", content_type.encode()],
-                    ],
-                }
-            )
-            await send(
-                {
-                    "type": "http.response.body",
-                    "body": response.encode("utf-8"),
-                }
-            )
+        if handler:
+            response = await handler()
         else:
-            await send(
-                {
-                    "type": "http.response.start",
-                    "status": 404,
-                    "headers": [
-                        [b"content-type", b"text/plain"],
-                    ],
-                }
-            )
-            await send(
-                {
-                    "type": "http.response.body",
-                    "body": b"Not Found",
-                }
-            )
+            response = Response("Not Found", status_code=404)
+
+        await response(scope, receive, send)
