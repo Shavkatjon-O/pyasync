@@ -6,9 +6,6 @@ class Pyasync:
     def __init__(self):
         self.router = Router()
 
-    def add_route(self, path, endpoint, methods=["GET"]):
-        self.router.add_route(path, endpoint, methods)
-
     async def __call__(self, scope, receive, send):
         assert scope["type"] == "http"
 
